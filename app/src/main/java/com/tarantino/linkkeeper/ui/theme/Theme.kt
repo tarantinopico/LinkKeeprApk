@@ -10,24 +10,31 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = iOSBlue,
-    secondary = iOSGray,
-    tertiary = iOSGreen,
-    background = iOSDarkGray,
-    surface = iOSDarkGray
+    primary = NordicBlue,
+    secondary = NordicSlate,
+    background = NordicDarkBackground,
+    surface = NordicDarkSurface,
+    surfaceVariant = NordicDarkSurfaceVariant,
+    error = NordicError,
+    onBackground = Color.White,
+    onSurface = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = iOSBlue,
-    secondary = iOSGray,
-    tertiary = iOSGreen,
-    background = iOSLightGray,
-    surface = iOSLightGray
+    primary = NordicBlue,
+    secondary = NordicSlate,
+    background = NordicLightBackground,
+    surface = NordicLightSurface,
+    surfaceVariant = NordicLightSurfaceVariant,
+    error = NordicError,
+    onBackground = Color.Black,
+    onSurface = Color.Black
 )
 
 @Composable

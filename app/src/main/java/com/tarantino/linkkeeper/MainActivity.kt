@@ -14,8 +14,6 @@ class MainActivity : ComponentActivity() {
         
         WindowCompat.setDecorFitsSystemWindows(window, false)
         enableEdgeToEdge()
-        window.statusBarColor = android.graphics.Color.TRANSPARENT
-        window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
         setContent {
             KeeprTheme {
