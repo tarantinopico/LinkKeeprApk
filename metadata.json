@@ -1,0 +1,6 @@
+{
+  "name": "Keepr",
+  "description": "Foundational codebase for an Android app named Keepr to save links.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
