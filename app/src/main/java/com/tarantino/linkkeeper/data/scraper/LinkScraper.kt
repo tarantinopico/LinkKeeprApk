@@ -19,11 +19,7 @@ class LinkScraper @Inject constructor(
             url
         }
 
-        val domain = try {
-            Uri.parse(validUrl).host ?: validUrl
-        } catch (e: Exception) {
-            validUrl
-        }
+        val domain = runCatching { Uri.parse(validUrl).host }.getOrNull() ?: "Unknown Link"
 
         try {
             val document = Jsoup.connect(validUrl)
@@ -49,14 +45,6 @@ class LinkScraper @Inject constructor(
             val imageUrl = ogImage.takeIf { it.isNotBlank() } ?: ""
 
             ScrapedMetadata(title, description, imageUrl)
-        } catch (e: IOException) {
-            ScrapedMetadata(title = domain, description = "", imageUrl = "")
-        } catch (e: SSLException) {
-            ScrapedMetadata(title = domain, description = "", imageUrl = "")
-        } catch (e: HttpStatusException) {
-            ScrapedMetadata(title = domain, description = "", imageUrl = "")
-        } catch (e: IllegalArgumentException) {
-            ScrapedMetadata(title = domain, description = "", imageUrl = "")
         } catch (e: Exception) {
             ScrapedMetadata(title = domain, description = "", imageUrl = "")
         }

@@ -1,38 +1,37 @@
 package com.tarantino.linkkeeper
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,198 +41,205 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import coil.compose.AsyncImage
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @AndroidEntryPoint
 class ShareActivity : ComponentActivity() {
-
-    private val viewModel: ShareViewModel by viewModels()
-
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        
+        val url = intent?.getStringExtra(Intent.EXTRA_TEXT)?.let { extractUrl(it) }
 
-        val action = intent.action
-        val type = intent.type
-
-        if (Intent.ACTION_SEND == action && type != null) {
-            if ("text/plain" == type) {
-                val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
-                if (sharedText != null) {
-                    viewModel.processSharedText(sharedText)
-                }
-            }
+        if (url == null) {
+            finish()
+            return
         }
 
         setContent {
-            KeeprTheme {
-                val uiState by viewModel.uiState.collectAsState()
+            val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+            WindowCompat.getInsetsController(window, window.decorView).apply {
+                isAppearanceLightStatusBars = !darkTheme
+                isAppearanceLightNavigationBars = !darkTheme
+            }
+            KeeprTheme(darkTheme = darkTheme) {
+                ShareScreen(
+                    url = url,
+                    onClose = { finish() }
+                )
+            }
+        }
+    }
 
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        GlassTopAppBar(
-                            title = { Text("Save to Keepr", fontWeight = FontWeight.Bold) }
-                        )
+    private fun extractUrl(text: String): String? {
+        val urlRegex = "(?i)\\b((?:https?://|www\\d{0,3}[.]|[a-z0-9.\\-]+[.][a-z]{2,4}/)(?:[^\\s()<>]+|\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\))+(?:\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\)|[^\\s`!()\\[\\]{};:'\".,<>?«»“”‘’]))".toRegex()
+        return urlRegex.find(text)?.value
+    }
+}
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .windowInsetsPadding(WindowInsets.safeDrawing)
-                                .padding(16.dp)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ShareScreen(
+    url: String,
+    onClose: () -> Unit,
+    viewModel: ShareViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(url) {
+        viewModel.handleIntent(url)
+    }
+    
+    if (uiState is ShareUiState.Saved) {
+        LaunchedEffect(Unit) {
+            onClose()
+        }
+        return
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Scaffold(
+            topBar = {
+                GlassTopAppBar(
+                    title = { Text("Save Link", style = MaterialTheme.typography.titleLarge) },
+                    actions = {
+                        IconButton(onClick = onClose) {
+                            Icon(Icons.Default.Close, contentDescription = "Close")
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                when (val state = uiState) {
+                    is ShareUiState.Initial, is ShareUiState.Loading -> {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            when (val state = uiState) {
-                                is ShareUiState.Idle -> {}
-                                is ShareUiState.Loading -> {
-                                    Column(
-                                        modifier = Modifier.fillMaxSize(),
-                                        verticalArrangement = Arrangement.Center,
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        Text(
-                                            "Extracting link...",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
-                                        )
-                                    }
-                                }
-                                is ShareUiState.Success -> {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .verticalScroll(rememberScrollState())
-                                    ) {
-                                        if (state.metadata.imageUrl.isNotBlank()) {
-                                            AsyncImage(
-                                                model = state.metadata.imageUrl,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .aspectRatio(16f / 9f)
-                                                    .clip(RoundedCornerShape(28.dp))
-                                                    .hairlineBorder(RoundedCornerShape(28.dp)),
-                                                contentScale = ContentScale.Crop
-                                            )
-                                            Spacer(modifier = Modifier.height(24.dp))
-                                        }
-
-                                        Text(
-                                            text = state.metadata.title,
-                                            style = MaterialTheme.typography.titleLarge,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = state.metadata.description,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
-                                            maxLines = 3,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-
-                                        Spacer(modifier = Modifier.height(32.dp))
-
-                                        Text(
-                                            text = "Select Group",
-                                            style = MaterialTheme.typography.titleMedium
-                                        )
-                                        Spacer(modifier = Modifier.height(12.dp))
-
-                                        LazyRow(
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                            contentPadding = PaddingValues(end = 16.dp)
-                                        ) {
-                                            items(state.groups) { groupWithCount ->
-                                                val isSelected = state.selectedGroupId == groupWithCount.group.id
-                                                FilterChip(
-                                                    selected = isSelected,
-                                                    onClick = { viewModel.onGroupSelected(groupWithCount.group.id) },
-                                                    label = { Text(groupWithCount.group.name) },
-                                                    shape = RoundedCornerShape(16.dp),
-                                                    colors = FilterChipDefaults.filterChipColors(
-                                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                                    ),
-                                                    modifier = Modifier.hairlineBorder(RoundedCornerShape(16.dp))
-                                                )
-                                            }
-                                        }
-
-                                        Spacer(modifier = Modifier.height(32.dp))
-
-                                        OutlinedTextField(
-                                            value = state.userNote,
-                                            onValueChange = { viewModel.onUserNoteChange(it) },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            label = { Text("Add a note or custom title...") },
-                                            shape = RoundedCornerShape(16.dp),
-                                            maxLines = 3,
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-                                            )
-                                        )
-
-                                        Spacer(modifier = Modifier.height(48.dp))
-
-                                        Button(
-                                            onClick = { viewModel.saveLink() },
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Extracting details...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    is ShareUiState.Success -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            verticalArrangement = Arrangement.spacedBy(24.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().hairlineBorder(RoundedCornerShape(20.dp)),
+                                shape = RoundedCornerShape(20.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                shadowElevation = 0.dp
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    if (state.scrapedMetadata.imageUrl.isNotBlank()) {
+                                        AsyncImage(
+                                            model = state.scrapedMetadata.imageUrl,
+                                            contentDescription = null,
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .height(56.dp),
-                                            shape = RoundedCornerShape(16.dp),
-                                            enabled = state.selectedGroupId != null
-                                        ) {
-                                            Text("Save to Keepr", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                                        }
-                                    }
-                                }
-                                is ShareUiState.Saved -> {
-                                    LaunchedEffect(Unit) {
-                                        finish()
-                                    }
-                                }
-                                is ShareUiState.Error -> {
-                                    Column(
-                                        modifier = Modifier.fillMaxSize(),
-                                        verticalArrangement = Arrangement.Center,
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(
-                                            text = "Oops!",
-                                            style = MaterialTheme.typography.headlineMedium,
-                                            color = MaterialTheme.colorScheme.error
+                                                .aspectRatio(16f / 9f)
+                                                .clip(RoundedCornerShape(12.dp)),
+                                            contentScale = ContentScale.Crop
                                         )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = state.message,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Spacer(modifier = Modifier.height(24.dp))
-                                        Button(
-                                            onClick = { finish() },
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                    }
+                                    
+                                    Text(
+                                        text = state.scrapedMetadata.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = state.scrapedMetadata.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+
+                            Column {
+                                Text("Choose Group", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    items(state.groups) { group ->
+                                        FilterChip(
+                                            selected = state.selectedGroupId == group.group.id,
+                                            onClick = { viewModel.onGroupSelected(group.group.id) },
+                                            label = { Text(group.group.name) },
                                             shape = RoundedCornerShape(16.dp)
-                                        ) {
-                                            Text("Close")
-                                        }
+                                        )
                                     }
                                 }
                             }
+
+                            OutlinedTextField(
+                                value = state.userNote,
+                                onValueChange = { viewModel.onUserNoteChange(it) },
+                                label = { Text("Add a note or custom title...") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                maxLines = 3
+                            )
+
+                            Button(
+                                onClick = { viewModel.saveLink() },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                enabled = state.selectedGroupId != null
+                            ) {
+                                Text("Save Link", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                            }
                         }
                     }
+                    is ShareUiState.Error -> {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = state.message,
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                            Button(onClick = { viewModel.handleIntent(url) }, shape = RoundedCornerShape(16.dp)) {
+                                Text("Try Again")
+                            }
+                        }
+                    }
+                    else -> {}
                 }
             }
         }

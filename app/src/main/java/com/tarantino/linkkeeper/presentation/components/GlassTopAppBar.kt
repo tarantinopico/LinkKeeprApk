@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,15 +32,19 @@ fun GlassTopAppBar(
         modifier = modifier
             .windowInsetsPadding(WindowInsets.statusBars)
             .height(64.dp)
-            .glassPanel(darkMode = darkMode, shape = shape)
+            .frostedSurface(darkMode = darkMode, shape = shape)
     ) {
+        FrostedHighlight(darkMode = darkMode)
         CenterAlignedTopAppBar(
             title = title,
             actions = actions,
             navigationIcon = navigationIcon,
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                 containerColor = Color.Transparent,
-                scrolledContainerColor = Color.Transparent
+                scrolledContainerColor = Color.Transparent,
+                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                actionIconContentColor = MaterialTheme.colorScheme.onSurface,
+                navigationIconContentColor = MaterialTheme.colorScheme.onSurface
             )
         )
     }

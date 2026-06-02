@@ -7,11 +7,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -82,23 +89,23 @@ fun DashboardScreen(
                 top = innerPadding.calculateTopPadding() + 32.dp,
                 bottom = innerPadding.calculateBottomPadding() + 100.dp
             ),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars)
         ) {
             item {
                 Text(
                     text = "Your Groups",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 24.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
             
             item {
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 24.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(groups) { group ->
-                        GroupCard(group = group, onClick = { onNavigateToGroup(group.group.id) })
+                        GroupCard(groupWithCount = group, onClick = { onNavigateToGroup(group.group.id) })
                     }
                 }
             }
@@ -107,29 +114,26 @@ fun DashboardScreen(
                 Text(
                     text = "Recent Links",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
+                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
                 )
             }
 
-            items(recentLinks.take(10).size) { index ->
-                val link = recentLinks[index]
-                var visible by remember { mutableStateOf(false) }
-
-                LaunchedEffect(Unit) {
-                    delay(index * 50L)
-                    visible = true
-                }
-
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(iosFade) + slideInVertically(iosSpringOffset) { it / 2 }
+            item {
+                val links = recentLinks.take(10)
+                LazyVerticalStaggeredGrid(
+                    columns = StaggeredGridCells.Adaptive(160.dp),
+                    verticalItemSpacing = 16.dp,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    modifier = Modifier.height((links.size.coerceAtMost(5) * 116 + 32).dp)
                 ) {
-                    LinkCardCompact(
-                        link = link,
-                        onClick = { viewModel.openLink(link.url) },
-                        onCopy = { viewModel.copyLink(link.url) },
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
-                    )
+                    items(links) { link ->
+                        LinkCardCompact(
+                            link = link,
+                            onOpen = { viewModel.openLink(link.url) },
+                            onCopy = { viewModel.copyLink(link.url) }
+                        )
+                    }
                 }
             }
         }

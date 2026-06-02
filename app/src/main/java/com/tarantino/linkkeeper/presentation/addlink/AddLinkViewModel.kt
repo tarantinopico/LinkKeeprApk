@@ -39,7 +39,7 @@ class AddLinkViewModel @Inject constructor(
     }
 
     fun onUrlChange(url: String) {
-        _uiState.value = _uiState.value.copy(url = url, error = null)
+        _uiState.value = _uiState.value.copy(url = url, errorMessage = null)
     }
 
     fun onNoteChange(note: String) {
@@ -50,29 +50,30 @@ class AddLinkViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedGroupId = groupId)
     }
 
-    fun saveLink() {
-        val currentState = _uiState.value
-        if (currentState.url.isBlank()) {
-            _uiState.value = currentState.copy(error = "URL cannot be empty")
+    fun saveLink(onSuccess: () -> Unit) {
+        val state = _uiState.value
+        val url = state.url.trim()
+        val groupId = state.selectedGroupId
+
+        if (url.isBlank()) {
+            _uiState.value = state.copy(errorMessage = "URL cannot be empty")
             return
         }
-        val groupId = currentState.selectedGroupId ?: return
+
+        if (groupId == null) {
+            _uiState.value = state.copy(errorMessage = "Please select a group")
+            return
+        }
 
         viewModelScope.launch {
-            _uiState.value = currentState.copy(isLoading = true, error = null)
+            _uiState.value = state.copy(isLoading = true, errorMessage = null)
             try {
-                scrapeAndSaveLinkUseCase(currentState.url, groupId, currentState.userNote)
-                _uiState.value = currentState.copy(isLoading = false, isSaved = true)
+                scrapeAndSaveLinkUseCase(url, groupId, state.userNote)
+                _uiState.value = state.copy(isLoading = false, url = "", userNote = "")
+                onSuccess()
             } catch (e: Exception) {
-                _uiState.value = currentState.copy(isLoading = false, error = "Failed to save link")
+                _uiState.value = state.copy(isLoading = false, errorMessage = "Failed to save link")
             }
         }
-    }
-    
-    fun reset() {
-        _uiState.value = AddLinkUiState(
-            groups = _uiState.value.groups,
-            selectedGroupId = _uiState.value.groups.firstOrNull()?.group?.id
-        )
     }
 }

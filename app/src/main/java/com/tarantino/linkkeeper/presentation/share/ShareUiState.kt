@@ -1,10 +1,10 @@
 package com.tarantino.linkkeeper
 
 sealed interface ShareUiState {
-    data object Idle : ShareUiState
+    data object Initial : ShareUiState
     data object Loading : ShareUiState
     data class Success(
-        val metadata: ScrapedMetadata,
+        val scrapedMetadata: ScrapedMetadata,
         val groups: List<GroupWithCount>,
         val selectedGroupId: Long?,
         val userNote: String

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -79,21 +81,20 @@ fun LinkCard(
         state = dismissState,
         enableDismissFromStartToEnd = true,
         enableDismissFromEndToStart = true,
-        modifier = modifier,
+        modifier = modifier.clip(RoundedCornerShape(28.dp)),
         backgroundContent = {
             val direction = dismissState.dismissDirection
             if (direction != null) {
-                val color = if (direction == SwipeToDismissBoxValue.EndToStart) NordicError.copy(alpha = 0.15f) else NordicBlue.copy(alpha = 0.15f)
+                val color = if (direction == SwipeToDismissBoxValue.EndToStart) MaterialTheme.colorScheme.errorContainer else Color(0xFFE8F5E9)
                 val icon = if (direction == SwipeToDismissBoxValue.EndToStart) Icons.Default.Delete else if (link.isRead) Icons.Default.Close else Icons.Default.Check
-                val tint = if (direction == SwipeToDismissBoxValue.EndToStart) NordicError else NordicBlue
+                val tint = if (direction == SwipeToDismissBoxValue.EndToStart) MaterialTheme.colorScheme.error else Color(0xFF2E7D32)
                 val alignment = if (direction == SwipeToDismissBoxValue.EndToStart) Alignment.CenterEnd else Alignment.CenterStart
                 
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(28.dp))
                         .background(color)
-                        .padding(horizontal = 20.dp),
+                        .padding(horizontal = 24.dp),
                     contentAlignment = alignment
                 ) {
                     Icon(imageVector = icon, contentDescription = null, tint = tint)
@@ -112,7 +113,7 @@ fun LinkCard(
                 shadowElevation = 0.dp
             ) {
                 Column {
-                    if (link.thumbnailUri.isNotBlank()) {
+                    if (!link.thumbnailUri.isNullOrBlank()) {
                         AsyncImage(
                             model = link.thumbnailUri,
                             contentDescription = null,
@@ -123,6 +124,7 @@ fun LinkCard(
                             contentScale = ContentScale.Crop
                         )
                     } else {
+                        val initialLetter = runCatching { Uri.parse(link.url).host?.firstOrNull()?.uppercase() }.getOrNull() ?: "L"
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -132,7 +134,7 @@ fun LinkCard(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = try { Uri.parse(link.url).host?.firstOrNull()?.uppercase() ?: "L" } catch (e: Exception) { "L" },
+                                text = initialLetter,
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -144,6 +146,7 @@ fun LinkCard(
                             text = link.title,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
+                            fontWeight = FontWeight.SemiBold,
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -159,7 +162,8 @@ fun LinkCard(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = link.userNote,
-                                style = MaterialTheme.typography.labelLarge,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
@@ -174,15 +178,20 @@ fun LinkCard(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                val host = try { Uri.parse(link.url).host ?: "unknown" } catch(e: Exception) { "unknown" }
-                                AsyncImage(
-                                    model = "https://www.google.com/s2/favicons?domain=$host&sz=64",
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                                val host = runCatching { Uri.parse(link.url).host }.getOrNull()
+                                if (!host.isNullOrBlank()) {
+                                    AsyncImage(
+                                        model = "https://www.google.com/s2/favicons?domain=$host&sz=64",
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                } else {
+                                    Icon(Icons.Default.Language, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+                                }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = host,
+                                    text = host ?: "unknown",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                                     maxLines = 1,

@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.material.icons.Icons
@@ -79,6 +81,7 @@ fun LinksGridScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
             )
         } else {
             LazyVerticalStaggeredGrid(
@@ -91,7 +94,7 @@ fun LinksGridScreen(
                     end = 24.dp,
                     bottom = innerPadding.calculateBottomPadding() + 48.dp
                 ),
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars)
             ) {
                 items(links.size) { index ->
                     val link = links[index]

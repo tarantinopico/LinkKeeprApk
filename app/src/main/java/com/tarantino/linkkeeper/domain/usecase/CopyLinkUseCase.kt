@@ -11,9 +11,9 @@ class CopyLinkUseCase @Inject constructor(
 ) {
     operator fun invoke(url: String): Boolean {
         return try {
-            val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clipData = ClipData.newPlainText("Keepr Link", url)
-            clipboardManager.setPrimaryClip(clipData)
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                ?: return false
+            clipboard.setPrimaryClip(ClipData.newPlainText("Keepr Link", url))
             true
         } catch (e: Exception) {
             false

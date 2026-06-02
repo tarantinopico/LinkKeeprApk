@@ -2,7 +2,6 @@ package com.tarantino.linkkeeper
 
 import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,9 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -37,7 +37,7 @@ import coil.compose.AsyncImage
 @Composable
 fun LinkCardCompact(
     link: SavedLink,
-    onClick: () -> Unit,
+    onOpen: () -> Unit,
     onCopy: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -45,74 +45,87 @@ fun LinkCardCompact(
         modifier = modifier
             .fillMaxWidth()
             .height(100.dp)
-            .alpha(if (link.isRead) 0.6f else 1f)
-            .hairlineBorder(RoundedCornerShape(20.dp))
-            .clip(RoundedCornerShape(20.dp))
-            .clickable { onClick() },
+            .hairlineBorder(RoundedCornerShape(20.dp)),
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            if (link.thumbnailUri.isNotBlank()) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (!link.thumbnailUri.isNullOrBlank()) {
                 AsyncImage(
                     model = link.thumbnailUri,
                     contentDescription = null,
                     modifier = Modifier
-                        .width(80.dp)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)),
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop
                 )
             } else {
+                val initialLetter = runCatching { Uri.parse(link.url).host?.firstOrNull()?.uppercase() }.getOrNull() ?: "L"
                 Box(
                     modifier = Modifier
-                        .width(80.dp)
-                        .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clip(RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)),
+                        .size(80.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = try { Uri.parse(link.url).host?.firstOrNull()?.uppercase() ?: "L" } catch (e: Exception) { "L" },
-                        style = MaterialTheme.typography.titleLarge,
+                        text = initialLetter,
+                        style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
             
+            Spacer(modifier = Modifier.width(12.dp))
+            
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .fillMaxHeight(),
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = link.title,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 
                 if (link.userNote.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = link.userNote,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                 }
-
-                Spacer(modifier = Modifier.height(4.dp))
+                
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val host = try { Uri.parse(link.url).host ?: "unknown" } catch(e: Exception) { "unknown" }
+                    val host = runCatching { Uri.parse(link.url).host }.getOrNull()
+                    if (!host.isNullOrBlank()) {
+                        AsyncImage(
+                            model = "https://www.google.com/s2/favicons?domain=$host&sz=64",
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    } else {
+                        Icon(Icons.Default.Language, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f))
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = host,
+                        text = host ?: "unknown",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                         maxLines = 1,
@@ -121,18 +134,10 @@ fun LinkCardCompact(
                 }
             }
             
-            Column(
-                modifier = Modifier
-                    .width(40.dp)
-                    .fillMaxHeight()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.SpaceEvenly,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 IconButton(
                     onClick = onCopy,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
@@ -142,8 +147,8 @@ fun LinkCardCompact(
                     )
                 }
                 IconButton(
-                    onClick = onClick,
-                    modifier = Modifier.size(24.dp)
+                    onClick = onOpen,
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.OpenInNew,

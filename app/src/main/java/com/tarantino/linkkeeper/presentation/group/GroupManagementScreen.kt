@@ -108,6 +108,7 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
                         "Lock" -> Icons.Default.Lock
                         else -> Icons.Default.Home
                     }
+                    val itemColor = runCatching { Color(android.graphics.Color.parseColor(group.colorHex)) }.getOrDefault(MaterialTheme.colorScheme.primary)
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -124,7 +125,7 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(android.graphics.Color.parseColor(group.colorHex))),
+                                    .background(itemColor),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(iconVector, null, tint = Color.White)
@@ -136,7 +137,7 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
                                 modifier = Modifier.weight(1f)
                             )
                             IconButton(onClick = { viewModel.deleteGroup(group.id) }) {
-                                Icon(Icons.Default.Delete, "Delete", tint = NordicError)
+                                Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
@@ -146,7 +147,7 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .glassPanel(
+                    .frostedSurface(
                         darkMode = isSystemInDarkTheme(),
                         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                     )
@@ -175,7 +176,7 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
                     Spacer(modifier = Modifier.height(12.dp))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         items(presetColors) { colorHex ->
-                            val color = Color(android.graphics.Color.parseColor(colorHex))
+                            val color = runCatching { Color(android.graphics.Color.parseColor(colorHex)) }.getOrDefault(MaterialTheme.colorScheme.primary)
                             val isSelected = selectedColor == colorHex
                             Box(
                                 modifier = Modifier

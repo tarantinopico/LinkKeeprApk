@@ -49,13 +49,19 @@ class MainViewModel @Inject constructor(
     }
 
     fun openLink(url: String) {
-        openLinkUseCase(url)
+        viewModelScope.launch {
+            openLinkUseCase(url).onFailure {
+                _snackbarEvent.emit("Cannot open link")
+            }
+        }
     }
 
     fun copyLink(url: String) {
-        if (copyLinkUseCase(url)) {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            if (copyLinkUseCase(url)) {
                 _snackbarEvent.emit("Link copied to clipboard")
+            } else {
+                _snackbarEvent.emit("Could not copy link")
             }
         }
     }
