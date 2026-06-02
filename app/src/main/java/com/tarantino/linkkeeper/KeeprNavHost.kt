@@ -1,7 +1,6 @@
 package com.tarantino.linkkeeper
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -9,17 +8,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 
 @Composable
-fun KeeprNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Dashboard.route,
-        modifier = modifier
-    ) {
-        composable(Screen.Dashboard.route) {
-            DashboardScreen(navController = navController)
+fun KeeprNavHost(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = "dashboard") {
+        composable("dashboard") {
+            DashboardScreen(
+                onNavigateToGroupManagement = { navController.navigate("group_management") },
+                onNavigateToGroup = { groupId -> navController.navigate("group_links/$groupId") }
+            )
         }
         composable(
-            route = Screen.GroupLinks.route,
+            route = "group_links/{groupId}",
             arguments = listOf(navArgument("groupId") { type = NavType.LongType })
         ) { backStackEntry ->
             val groupId = backStackEntry.arguments?.getLong("groupId") ?: return@composable
@@ -28,7 +26,7 @@ fun KeeprNavHost(navController: NavHostController, modifier: Modifier = Modifier
                 onBack = { navController.popBackStack() }
             )
         }
-        composable(Screen.GroupManagement.route) {
+        composable("group_management") {
             GroupManagementScreen(
                 onBack = { navController.popBackStack() }
             )

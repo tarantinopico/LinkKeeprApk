@@ -6,39 +6,34 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -77,9 +72,10 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
     val icons = listOf("Folder", "Movie", "Restaurant", "Article", "Code", "Lock")
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
-                title = { Text("Groups") },
+            GlassTopAppBar(
+                title = { Text("Groups", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -91,12 +87,13 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
         ) {
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(top = innerPadding.calculateTopPadding() + 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(groups) { group ->
                     val iconVector = when (group.iconName) {
@@ -108,40 +105,49 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
                         "Lock" -> Icons.Default.Face
                         else -> Icons.Default.Home
                     }
-                    ListItem(
-                        headlineContent = { Text(group.name, fontWeight = FontWeight.SemiBold) },
-                        leadingContent = {
+                    IosCard(
+                        modifier = Modifier.fillMaxWidth().height(72.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(CircleShape)
+                                    .clip(SquircleShape(12.dp))
                                     .background(Color(android.graphics.Color.parseColor(group.colorHex))),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(iconVector, contentDescription = null, tint = Color.White)
+                                Icon(iconVector, null, tint = Color.White)
                             }
-                        },
-                        trailingContent = {
+                            Spacer(Modifier.size(16.dp))
+                            Text(
+                                text = group.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.weight(1f)
+                            )
                             IconButton(onClick = { viewModel.deleteGroup(group.id) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                                Icon(Icons.Default.Delete, "Delete", tint = iOSRed)
                             }
                         }
-                    )
+                    }
                 }
             }
 
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(24.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    .glassSurface(
+                        darkMode = androidx.compose.foundation.isSystemInDarkTheme(),
+                        shape = SquircleShapePartial(topStart = 28.dp, topEnd = 28.dp)
+                    )
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(24.dp)
+                        .padding(bottom = innerPadding.calculateBottomPadding())
                 ) {
                     Text("Create New Group", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(16.dp))
@@ -150,7 +156,7 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
                         onValueChange = { name = it },
                         label = { Text("Group Name") },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = SquircleShape(16.dp),
                         singleLine = true
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -159,15 +165,16 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(presetColors) { colorHex ->
                             val color = Color(android.graphics.Color.parseColor(colorHex))
+                            val isSelected = selectedColor == colorHex
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(CircleShape)
+                                    .clip(SquircleShape(12.dp))
                                     .background(color)
                                     .border(
                                         width = 3.dp,
-                                        color = if (selectedColor == colorHex) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                                        shape = CircleShape
+                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                        shape = SquircleShape(12.dp)
                                     )
                                     .clickable { selectedColor = colorHex }
                             )
@@ -190,7 +197,7 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
                             Box(
                                 modifier = Modifier
                                     .size(48.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(SquircleShape(12.dp))
                                     .background(if (selectedIcon == iconName) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
                                     .clickable { selectedIcon = iconName },
                                 contentAlignment = Alignment.Center
@@ -223,7 +230,7 @@ fun GroupManagementScreen(onBack: () -> Unit, viewModel: GroupViewModel = hiltVi
                                 name = ""
                             }
                         },
-                        shape = RoundedCornerShape(16.dp),
+                        shape = SquircleShape(16.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),

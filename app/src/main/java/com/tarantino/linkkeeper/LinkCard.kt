@@ -1,7 +1,6 @@
 package com.tarantino.linkkeeper
 
 import android.net.Uri
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,13 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LinkCard(
     link: SavedLink,
@@ -49,6 +45,7 @@ fun LinkCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             when (value) {
@@ -62,7 +59,8 @@ fun LinkCard(
                 }
                 else -> false
             }
-        }
+        },
+        positionalThreshold = { with(density) { 120.dp.toPx() } }
     )
 
     SwipeToDismissBox(
@@ -73,15 +71,15 @@ fun LinkCard(
         backgroundContent = {
             val direction = dismissState.dismissDirection
             if (direction != null) {
-                val color = if (direction == SwipeToDismissBoxValue.EndToStart) MaterialTheme.colorScheme.errorContainer else Color(0xFFE8F5E9)
+                val color = if (direction == SwipeToDismissBoxValue.EndToStart) iOSRed.copy(0.15f) else iOSGreen.copy(0.15f)
                 val icon = if (direction == SwipeToDismissBoxValue.EndToStart) Icons.Default.Delete else if (link.isRead) Icons.Default.Close else Icons.Default.Check
-                val tint = if (direction == SwipeToDismissBoxValue.EndToStart) MaterialTheme.colorScheme.error else Color(0xFF2E7D32)
+                val tint = if (direction == SwipeToDismissBoxValue.EndToStart) iOSRed else iOSGreen
                 val alignment = if (direction == SwipeToDismissBoxValue.EndToStart) Alignment.CenterEnd else Alignment.CenterStart
                 
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(SquircleShape(24.dp))
                         .background(color)
                         .padding(horizontal = 20.dp),
                     contentAlignment = alignment
@@ -91,14 +89,10 @@ fun LinkCard(
             }
         },
         content = {
-            Card(
+            IosCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .alpha(if (link.isRead) 0.6f else 1f),
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                onClick = onClick,
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    .alpha(if (link.isRead) 0.6f else 1f)
             ) {
                 Column {
                     if (link.thumbnailUri.isNotBlank()) {
@@ -108,7 +102,7 @@ fun LinkCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(16f / 9f)
-                                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
+                                .clip(SquircleShapePartial(24.dp, 24.dp, 0.dp, 0.dp)),
                             contentScale = ContentScale.Crop
                         )
                     } else {
@@ -117,7 +111,7 @@ fun LinkCard(
                                 .fillMaxWidth()
                                 .aspectRatio(16f / 9f)
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
+                                .clip(SquircleShapePartial(24.dp, 24.dp, 0.dp, 0.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -152,7 +146,7 @@ fun LinkCard(
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = host,
                                 style = MaterialTheme.typography.labelSmall,

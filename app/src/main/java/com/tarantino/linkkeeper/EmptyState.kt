@@ -27,7 +27,7 @@ fun EmptyState(icon: ImageVector, title: String, subtitle: String, modifier: Mod
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            tint = iOSGray
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -40,7 +40,7 @@ fun EmptyState(icon: ImageVector, title: String, subtitle: String, modifier: Mod
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = iOSGray,
             textAlign = TextAlign.Center
         )
     }

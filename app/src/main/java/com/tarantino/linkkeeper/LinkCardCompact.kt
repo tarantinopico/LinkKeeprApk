@@ -14,13 +14,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +27,6 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -47,8 +44,10 @@ fun LinkCardCompact(
     link: SavedLink,
     onClick: () -> Unit,
     onToggleRead: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             when (value) {
@@ -58,27 +57,31 @@ fun LinkCardCompact(
                 }
                 SwipeToDismissBoxValue.StartToEnd -> {
                     onToggleRead()
-                    false // Don't actually dismiss, just trigger action
+                    false
                 }
                 else -> false
             }
-        }
+        },
+        positionalThreshold = { with(density) { 120.dp.toPx() } }
     )
 
     SwipeToDismissBox(
         state = dismissState,
+        enableDismissFromStartToEnd = true,
+        enableDismissFromEndToStart = true,
+        modifier = modifier,
         backgroundContent = {
             val direction = dismissState.dismissDirection
             if (direction != null) {
-                val color = if (direction == SwipeToDismissBoxValue.EndToStart) MaterialTheme.colorScheme.errorContainer else Color(0xFFE8F5E9)
+                val color = if (direction == SwipeToDismissBoxValue.EndToStart) iOSRed.copy(0.15f) else iOSGreen.copy(0.15f)
                 val icon = if (direction == SwipeToDismissBoxValue.EndToStart) Icons.Default.Delete else if (link.isRead) Icons.Default.Close else Icons.Default.Check
-                val tint = if (direction == SwipeToDismissBoxValue.EndToStart) MaterialTheme.colorScheme.error else Color(0xFF2E7D32)
+                val tint = if (direction == SwipeToDismissBoxValue.EndToStart) iOSRed else iOSGreen
                 val alignment = if (direction == SwipeToDismissBoxValue.EndToStart) Alignment.CenterEnd else Alignment.CenterStart
+                
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 20.dp, vertical = 4.dp)
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(SquircleShape(20.dp))
                         .background(color)
                         .padding(horizontal = 20.dp),
                     contentAlignment = alignment
@@ -88,16 +91,11 @@ fun LinkCardCompact(
             }
         },
         content = {
-            Card(
+            IosCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(90.dp)
-                    .padding(horizontal = 20.dp, vertical = 4.dp)
-                    .alpha(if (link.isRead) 0.6f else 1f),
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                onClick = onClick,
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    .alpha(if (link.isRead) 0.6f else 1f)
             ) {
                 Row(modifier = Modifier.fillMaxSize()) {
                     if (link.thumbnailUri.isNotBlank()) {
@@ -107,7 +105,7 @@ fun LinkCardCompact(
                             modifier = Modifier
                                 .width(80.dp)
                                 .fillMaxHeight()
-                                .clip(RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)),
+                                .clip(SquircleShapePartial(24.dp, 0.dp, 24.dp, 0.dp)),
                             contentScale = ContentScale.Crop
                         )
                     } else {
@@ -116,7 +114,7 @@ fun LinkCardCompact(
                                 .width(80.dp)
                                 .fillMaxHeight()
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .clip(RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)),
+                                .clip(SquircleShapePartial(24.dp, 0.dp, 24.dp, 0.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -130,24 +128,25 @@ fun LinkCardCompact(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Text(
                             text = link.title,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             fontWeight = FontWeight.SemiBold,
-                            style = MaterialTheme.typography.titleSmall
+                            style = MaterialTheme.typography.bodyMedium
                         )
-                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             val host = try { Uri.parse(link.url).host ?: "unknown" } catch(e: Exception) { "unknown" }
                             AsyncImage(
                                 model = "https://www.google.com/s2/favicons?domain=$host&sz=64",
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(14.dp)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = host,
                                 style = MaterialTheme.typography.labelSmall,

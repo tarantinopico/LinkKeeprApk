@@ -117,6 +117,7 @@ dependencies {
   androidTestImplementation(libs.androidx.runner)
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   debugImplementation(libs.androidx.compose.ui.tooling)
+  implementation("androidx.graphics:graphics-shapes:1.0.1")
   implementation(libs.hilt.android)
   implementation(libs.hilt.navigation.compose)
   implementation(libs.jsoup)

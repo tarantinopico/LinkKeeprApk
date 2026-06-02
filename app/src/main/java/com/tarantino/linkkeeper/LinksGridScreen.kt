@@ -2,14 +2,17 @@ package com.tarantino.linkkeeper
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
@@ -18,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,8 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LinksGridScreen(groupId: Long, onBack: () -> Unit, viewModel: MainViewModel = hiltViewModel()) {
     var groupName by remember { mutableStateOf<String?>("Links") }
@@ -47,8 +50,9 @@ fun LinksGridScreen(groupId: Long, onBack: () -> Unit, viewModel: MainViewModel 
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            TopAppBar(
+            GlassTopAppBar(
                 title = { Text(groupName ?: "Links") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -60,7 +64,7 @@ fun LinksGridScreen(groupId: Long, onBack: () -> Unit, viewModel: MainViewModel 
     ) { innerPadding ->
         if (links.isEmpty()) {
             EmptyState(
-                icon = Icons.Default.Home, // Placeholder for empty state icon since we don't have it imported here. Wait, let's just use it anyway.
+                icon = Icons.Default.Home, // Simplified empty state icon
                 title = "No links yet",
                 subtitle = "Save some links to this group and they will appear here.",
                 modifier = Modifier
@@ -68,30 +72,40 @@ fun LinksGridScreen(groupId: Long, onBack: () -> Unit, viewModel: MainViewModel 
                     .padding(innerPadding)
             )
         } else {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 320.dp),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Adaptive(160.dp),
+                contentPadding = PaddingValues(top = innerPadding.calculateTopPadding() + 16.dp, start = 16.dp, end = 16.dp, bottom = 100.dp),
+                verticalItemSpacing = 16.dp,
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
+                modifier = Modifier.fillMaxSize()
             ) {
-                items(links, key = { it.id }) { link ->
-                    LinkCard(
-                        link = link,
-                        onClick = {
-                            try {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
-                                context.startActivity(intent)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        },
-                        onToggleRead = { viewModel.toggleRead(link.id, !link.isRead) },
-                        onDelete = { viewModel.deleteLink(link.id) },
-                        modifier = Modifier.animateItemPlacement()
-                    )
+                items(links.size) { index ->
+                    val link = links[index]
+                    var visible by remember { mutableStateOf(false) }
+
+                    LaunchedEffect(Unit) {
+                        delay(index * 50L)
+                        visible = true
+                    }
+
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(iosFade) + slideInVertically(iosSpringOffset) { it / 2 }
+                    ) {
+                        LinkCard(
+                            link = link,
+                            onClick = {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            },
+                            onToggleRead = { viewModel.toggleRead(link.id, !link.isRead) },
+                            onDelete = { viewModel.deleteLink(link.id) }
+                        )
+                    }
                 }
             }
         }
